@@ -76,8 +76,8 @@ This is the heart of the assignment. Build it before anything touches the networ
 ## M5 — Report materials
 
 - [ ] FSM diagram image for Section 2 — export from `docs/FSM.md`  
-- [ ] Screenshots: code with comments visible, GUI at rest, mid-decay, post-correction  
-- [ ] Terminal output showing state transitions  
+- [x] Screenshots: GUI at rest, mid-decay, decayed, sources-offline, post-correction — `docs/screenshots/`  
+- [x] Terminal output showing state transitions — `docs/sample-run.txt`  
 - [x] Confirm every source file is commented to the standard in `CLAUDE.md` — asserted by `tests/test_architecture.py::TestDocumentationStandard`
 
 ---

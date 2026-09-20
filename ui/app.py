@@ -46,10 +46,11 @@ from agent.clock import Clock, VirtualClock
 from agent.fsm import AgentFSM, TickResult
 from agent.model import ScoreBreakdown
 from agent.state import CodeRecord, CodeStatus, VerificationOutcome
+from sources.base import OfflineSource
 from ui import theme
 
-MIN_WIDTH = 1180
-MIN_HEIGHT = 720
+MIN_WIDTH = 1400
+MIN_HEIGHT = 820
 
 
 # --------------------------------------------------------------------------- #
@@ -136,28 +137,68 @@ class CodeRow(tk.Frame):
         self.fonts = fonts
 
         fg, soft = theme.status_colours(breakdown.status)
-        self.columnconfigure(1, weight=1)
+
+        # Laid out with pack, right to left, rather than grid.  Grid sizes a
+        # column to its content, so a long reward line pushed the action buttons
+        # off the edge of the row and Tk clipped them silently.  Packing the
+        # right-hand furniture first guarantees the buttons always get their
+        # width, and the code/reward block absorbs whatever is left.
 
         # --- status pill: the row's colour anchor -------------------------- #
         pill = tk.Frame(self, bg=soft)
-        pill.grid(row=0, column=0, rowspan=2, sticky="ns", padx=(0, 14))
+        pill.pack(side="left", fill="y", padx=(0, 14))
+        # Width in characters rather than pixels, so every pill is the same
+        # size without disabling geometry propagation (which would also zero
+        # the frame's height).
         tk.Label(
             pill, text=breakdown.status.value, bg=soft, fg=fg,
-            font=fonts["badge"], padx=10, pady=4,
+            font=fonts["badge"], pady=4, width=10,
         ).pack(expand=True, fill="both")
 
-        # --- code and reward ----------------------------------------------- #
-        identity = tk.Frame(self, bg=theme.CARD)
-        identity.grid(row=0, column=1, rowspan=2, sticky="w", pady=10)
-        tk.Label(identity, text=record.code, bg=theme.CARD, fg=theme.TEXT,
-                 font=fonts["code"], anchor="w").pack(anchor="w")
-        reward = record.claimed_reward or "no reward listed"
-        tk.Label(identity, text=reward[:52], bg=theme.CARD, fg=theme.TEXT_MUTED,
-                 font=fonts["small"], anchor="w").pack(anchor="w")
+        # --- actions (rightmost, so they can never be squeezed out) -------- #
+        actions = tk.Frame(self, bg=theme.CARD)
+        actions.pack(side="right", padx=(8, 12))
+
+        self._button(actions, "Copy", theme.ACCENT,
+                     lambda: self.app.copy_code(record.code)).pack(side="left", padx=3)
+        # These two are the sensor.  The user redeems by hand and reports back;
+        # nothing here touches Roblox.
+        self._button(actions, "Worked", theme.ACTIVE,
+                     lambda: self.app.report(record.code, VerificationOutcome.WORKING)
+                     ).pack(side="left", padx=3)
+        self._button(actions, "Failed", theme.DEAD,
+                     lambda: self.app.report(record.code, VerificationOutcome.DEAD)
+                     ).pack(side="left", padx=3)
+
+        # --- provenance and age -------------------------------------------- #
+        meta = tk.Frame(self, bg=theme.CARD)
+        meta.pack(side="right", padx=(8, 0))
+
+        badges = tk.Frame(meta, bg=theme.CARD)
+        badges.pack(anchor="e")
+        for source_id in record.source_ids[:2]:
+            trust = self.app.fsm.store.trust_for(source_id)
+            tk.Label(
+                badges, text=f"{_short_source(source_id)} {trust:.2f}",
+                bg=theme.BG, fg=theme.TEXT_MUTED, font=fonts["badge"],
+                padx=6, pady=2,
+            ).pack(side="left", padx=2)
+        if record.corroboration_count > 2:
+            tk.Label(badges, text=f"+{record.corroboration_count - 2}", bg=theme.BG,
+                     fg=theme.TEXT_FAINT, font=fonts["badge"], padx=5,
+                     pady=2).pack(side="left", padx=2)
+
+        age_text = (
+            "listed today" if breakdown.age_days < 1
+            else f"last listed {breakdown.age_days:.1f}d ago"
+        )
+        tk.Label(meta, text=f"{record.kind.value} \u00b7 {age_text}", bg=theme.CARD,
+                 fg=theme.TEXT_FAINT, font=fonts["small"], anchor="e",
+                 width=30).pack(anchor="e", pady=(4, 0))
 
         # --- confidence meter ---------------------------------------------- #
         meter_box = tk.Frame(self, bg=theme.CARD)
-        meter_box.grid(row=0, column=2, rowspan=2, sticky="e", padx=16)
+        meter_box.pack(side="right", padx=8)
 
         top = tk.Frame(meter_box, bg=theme.CARD)
         top.pack(anchor="e")
@@ -184,41 +225,25 @@ class CodeRow(tk.Frame):
         for widget in (canvas, top, meter_box):
             Tooltip(widget, lambda b=breakdown: b.explanation())
 
-        # --- provenance and age -------------------------------------------- #
-        meta = tk.Frame(self, bg=theme.CARD)
-        meta.grid(row=0, column=3, rowspan=2, sticky="e", padx=(0, 16))
+        # --- code and reward (takes whatever width is left) ---------------- #
+        identity = tk.Frame(self, bg=theme.CARD)
+        identity.pack(side="left", fill="both", expand=True, pady=10)
 
-        badges = tk.Frame(meta, bg=theme.CARD)
-        badges.pack(anchor="e")
-        for source_id in record.source_ids[:3]:
-            trust = self.app.fsm.store.trust_for(source_id)
-            tk.Label(
-                badges, text=f"{_short_source(source_id)} {trust:.2f}",
-                bg=theme.BG, fg=theme.TEXT_MUTED, font=fonts["badge"],
-                padx=6, pady=2,
-            ).pack(side="left", padx=2)
+        # Fixed widths in *characters*.  Pack hands each widget its requested
+        # size in packing order, so without a fixed request this block's width
+        # varied with the reward text and the right-hand furniture squeezed the
+        # code — the one thing on the row that must always be readable.  A
+        # constant request also lines the rows up with each other, since every
+        # row is its own frame and nothing else aligns them.
+        code_text = record.code if len(record.code) <= 20 else record.code[:19] + "\u2026"
+        tk.Label(identity, text=code_text, bg=theme.CARD, fg=theme.TEXT,
+                 font=fonts["code"], anchor="w", width=20).pack(anchor="w")
 
-        age_text = (
-            "listed today" if breakdown.age_days < 1
-            else f"last listed {breakdown.age_days:.1f}d ago"
-        )
-        tk.Label(meta, text=f"{record.kind.value} · {age_text}", bg=theme.CARD,
-                 fg=theme.TEXT_FAINT, font=fonts["small"]).pack(anchor="e", pady=(4, 0))
-
-        # --- actions -------------------------------------------------------- #
-        actions = tk.Frame(self, bg=theme.CARD)
-        actions.grid(row=0, column=4, rowspan=2, sticky="e", padx=(0, 12))
-
-        self._button(actions, "Copy", theme.ACCENT,
-                     lambda: self.app.copy_code(record.code)).pack(side="left", padx=3)
-        # These two are the sensor.  The user redeems by hand and reports back;
-        # nothing here touches Roblox.
-        self._button(actions, "Worked", theme.ACTIVE,
-                     lambda: self.app.report(record.code, VerificationOutcome.WORKING)
-                     ).pack(side="left", padx=3)
-        self._button(actions, "Didn't work", theme.DEAD,
-                     lambda: self.app.report(record.code, VerificationOutcome.DEAD)
-                     ).pack(side="left", padx=3)
+        reward = record.claimed_reward or "no reward listed"
+        if len(reward) > 34:
+            reward = reward[:33].rstrip() + "\u2026"
+        tk.Label(identity, text=reward, bg=theme.CARD, fg=theme.TEXT_MUTED,
+                 font=fonts["small"], anchor="w", width=34).pack(anchor="w")
 
         for widget in (self, identity, meta):
             widget.bind("<Enter>", self._hover_on, add="+")
@@ -230,7 +255,7 @@ class CodeRow(tk.Frame):
             bg=theme.CARD, fg=colour, activeforeground=colour,
             activebackground=theme.BG, relief="flat", bd=0,
             highlightthickness=1, highlightbackground=theme.BORDER,
-            padx=10, pady=5, cursor="hand2",
+            padx=7, pady=5, cursor="hand2",
         )
 
     def _hover_on(self, _event=None) -> None:
@@ -241,9 +266,17 @@ class CodeRow(tk.Frame):
 
 
 def _short_source(source_id: str) -> str:
-    """'example_community' -> 'COMMUNITY'.  Badges have to fit."""
-    tail = source_id.split("_")[-1]
-    return tail[:9].upper()
+    """
+    A short badge label: 'example_community' -> 'COMMUNITY'.
+
+    The demo fixture ids are all prefixed `example_`, so for those the
+    meaningful half is the tail.  For a real source the *first* part is the
+    distinctive one — otherwise `example_wiki` and `projectslayers2_wiki` both
+    render as "WIKI" and the badges stop identifying anything.
+    """
+    parts = source_id.split("_")
+    meaningful = parts[-1] if parts[0] == "example" else parts[0]
+    return meaningful[:9].upper()
 
 
 # --------------------------------------------------------------------------- #
@@ -276,16 +309,21 @@ class CodeSeekerApp:
         self.root = tk.Tk()
         self.root.title("CodeSeeker — a model-based agent for Roblox game codes")
         self.root.geometry(f"{MIN_WIDTH}x{MIN_HEIGHT}")
-        self.root.minsize(980, 620)
+        self.root.minsize(1200, 640)
         self.root.configure(bg=theme.BG)
 
         self.fonts = theme.build_fonts()
         self.refinement_var = tk.BooleanVar(value=fsm.refinement_enabled)
+        self.offline_var = tk.BooleanVar(value=False)
+        # Kept so the real sources can be restored when the outage toggle goes off.
+        self._live_sources = list(fsm.sources)
         self.game_var = tk.StringVar(value=fsm.game)
         self.status_var = tk.StringVar(value="starting up")
         self.clock_var = tk.StringVar(value="")
 
         self._rows: list[CodeRow] = []
+        #: How many of fsm.transitions have already been rendered.
+        self._log_cursor = 0
         self._poll_job: str | None = None
 
         self._build_header()
@@ -356,6 +394,8 @@ class CodeSeekerApp:
                                 lambda: self.advance(hours=1)).pack(side="left", padx=2)
             self._header_button(buttons, "+1 day",
                                 lambda: self.advance(days=1)).pack(side="left", padx=2)
+            self._header_button(buttons, "+3 days",
+                                lambda: self.advance(days=3)).pack(side="left", padx=2)
             self._header_button(buttons, "Reset clock",
                                 self.reset_clock).pack(side="left", padx=2)
 
@@ -369,6 +409,26 @@ class CodeSeekerApp:
             highlightthickness=0, bd=0, cursor="hand2",
         )
         toggle.pack(anchor="w", pady=(4, 0))
+
+        outage = tk.Checkbutton(
+            controls,
+            text="simulate source outage",
+            variable=self.offline_var,
+            command=self._on_offline_toggled,
+            bg=theme.CARD, fg=theme.TEXT_MUTED, font=self.fonts["small"],
+            activebackground=theme.CARD, selectcolor=theme.CARD,
+            highlightthickness=0, bd=0, cursor="hand2",
+        )
+        outage.pack(anchor="w")
+        Tooltip(outage, lambda: (
+            "Takes every source offline.\n\n"
+            "Advance the clock with this on and the agent reaches DECAY through "
+            "the POLL_SOURCES -> DECAY edge: it has no new information at all and "
+            "its beliefs still change, because it is reasoning about a world it "
+            "cannot currently observe.\n\n"
+            "docs/FSM.md calls this the clearest single illustration that the "
+            "agent is model-based. A simple reflex agent has nothing to do here."
+        ))
         Tooltip(toggle, lambda: (
             "OFF: a pure model-based agent. A user report corrects that one code only.\n\n"
             "ON: the agent also revises how much it trusts every source that listed "
@@ -438,7 +498,7 @@ class CodeSeekerApp:
         self.list_canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         # --- right: the transition log -------------------------------------- #
-        right = tk.Frame(body, bg=theme.BG, width=430)
+        right = tk.Frame(body, bg=theme.BG, width=380)
         right.pack(side="right", fill="y", padx=(18, 0))
         right.pack_propagate(False)
 
@@ -511,15 +571,20 @@ class CodeSeekerApp:
                 row.pack(fill="x", pady=3, padx=1)
                 self._rows.append(row)
 
-        self._append_log(result)
         self._update_clock_label()
 
         tally: dict[str, int] = {}
         for _, breakdown in result.ranked:
             tally[breakdown.status.value] = tally.get(breakdown.status.value, 0) + 1
         parts = ", ".join(f"{count} {status.lower()}" for status, count in sorted(tally.items()))
+        # Only sources that actually vouched for something on screen. The
+        # config seeds trust for every configured source, including the live
+        # web ones while running the canned demo, and listing those would
+        # suggest they had a hand in numbers they did not produce.
+        in_play = {sid for record, _ in result.ranked for sid in record.sources}
         trust = ", ".join(
-            f"{_short_source(s)} {v:.2f}" for s, v in sorted(self.fsm.store.trust_map().items())
+            f"{_short_source(s)} {self.fsm.store.trust_for(s):.2f}"
+            for s in sorted(in_play)
         )
         self.status_var.set(
             f"{len(result.ranked)} code(s) — {parts or 'none'}    |    "
@@ -527,10 +592,31 @@ class CodeSeekerApp:
             f"refinement {'ON' if self.fsm.refinement_enabled else 'OFF'}"
         )
 
-    def _append_log(self, result: TickResult) -> None:
+    def _refresh_log(self) -> None:
+        """
+        Render any transitions the log has not shown yet.
+
+        Reads `fsm.transitions` with a cursor rather than the `TickResult`,
+        for a concrete reason: PRESENT is not the last state of a tick.  The
+        FSM goes on to PURGE and back to IDLE *after* calling the presenter, so
+        a log built from the result handed to `present()` would permanently
+        omit the last two transitions of every cycle — including every PURGE,
+        which is exactly the one a viewer wants to see.  Called by the action
+        methods once the FSM has come to rest.
+        """
+        transitions = self.fsm.transitions
+        # The FSM trims its log, so the cursor can outrun it on a long session.
+        if self._log_cursor > len(transitions):
+            self._log_cursor = 0
+
+        pending = transitions[self._log_cursor:]
+        if not pending:
+            return
+        self._log_cursor = len(transitions)
+
         epoch = self.clock.start if isinstance(self.clock, VirtualClock) else None
         self.log_text.configure(state="normal")
-        for transition in result.transitions:
+        for transition in pending:
             elapsed = (
                 (transition.at - epoch).total_seconds() / 86400.0 if epoch else None
             )
@@ -540,12 +626,10 @@ class CodeSeekerApp:
             )
             self.log_text.insert(
                 "end",
-                f"[{stamp}] {transition.from_state.value} → {transition.to_state.value}\n",
+                f"[{stamp}] {transition.from_state.value} \u2192 {transition.to_state.value}\n",
                 transition.to_state.value,
             )
             self.log_text.insert("end", f"          {transition.reason}\n", "reason")
-        for warning in result.warnings:
-            self.log_text.insert("end", f"          ! {warning}\n", "warning")
         self.log_text.see("end")
         self.log_text.configure(state="disabled")
 
@@ -565,10 +649,12 @@ class CodeSeekerApp:
         The sensor firing.  Enters the FSM at VERIFY — belief meets ground truth.
         """
         self.fsm.report_outcome(code, outcome, self.clock.now())
+        self._refresh_log()
         self.fsm.store.save(self.belief_path)
 
     def poll_now(self) -> None:
         self.fsm.tick(self.clock.now())
+        self._refresh_log()
         self.fsm.store.save(self.belief_path)
 
     def advance(self, days: float = 0.0, hours: float = 0.0) -> None:
@@ -600,8 +686,32 @@ class CodeSeekerApp:
                else "the agent corrects individual codes only (pure model-based)")
         )
 
+    def _on_offline_toggled(self) -> None:
+        """
+        Swap the agent's sensors for dead ones, or put the real ones back.
+
+        The FSM is not told this happened and needs no special case: it polls,
+        every source fails, and it takes the POLL_SOURCES -> DECAY edge it
+        already has. That is the whole point — an outage is not an error path
+        bolted on for the demo, it is ordinary behaviour for an agent whose
+        beliefs do not depend on being able to see.
+        """
+        if self.offline_var.get():
+            self.fsm.sources = [
+                OfflineSource(s.source_id, getattr(s, "display_name", s.source_id))
+                for s in self._live_sources
+            ]
+            self.status_var.set(
+                "sources OFFLINE — advance the clock and watch every belief fall "
+                "with no new information arriving"
+            )
+        else:
+            self.fsm.sources = list(self._live_sources)
+            self.status_var.set("sources back online")
+
     def _on_game_changed(self, _event=None) -> None:
         self.fsm.select_game(self.game_var.get(), self.clock.now())
+        self._refresh_log()
 
     # -- lifecycle ---------------------------------------------------------- #
 

@@ -138,7 +138,10 @@ imports an input-automation library.
 
 ## Documentation
 
-- `ABOUT.md` — assignment context and the academic framing
+- `ABOUT.md` — assignment context, the academic framing, and the exact confidence model
+- `docs/demo-script.md` — timed run-through for the 5-minute video
+- `docs/sample-run.txt` — annotated terminal transcript of a full run
+- `docs/screenshots/` — GUI at rest, mid-decay, sources offline, post-correction
 - `PLAN.md` — build order and milestone checklist
 - `CLAUDE.md` — working instructions for the AI coding agent
 - `docs/FSM.md` — state machine specification

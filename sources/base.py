@@ -108,6 +108,29 @@ class Source(ABC):
         return f"{self.display_name} ({self.source_id})"
 
 
+class OfflineSource(Source):
+    """
+    A source that is down.  Stands in for a real one during a demonstration.
+
+    `docs/FSM.md` calls the `POLL_SOURCES -> DECAY` edge "the clearest single
+    illustration that the agent models a world it cannot currently observe", and
+    asks for it to be made visually obvious.  This class is how the GUI makes it
+    obvious on demand: flip the outage toggle, advance the clock, and every
+    confidence bar falls with literally zero information arriving.
+
+    It is not test scaffolding smuggled into production — it is the mechanism
+    for demonstrating the single most important claim the agent makes, and a
+    real outage produces exactly this behaviour.
+    """
+
+    def __init__(self, source_id: str, display_name: str = ""):
+        self.source_id = source_id
+        self.display_name = display_name or source_id
+
+    def poll(self, game: str, now: datetime) -> list[RawListing]:
+        raise SourceError("simulated outage — source unreachable")
+
+
 def poll_safely(source: Source, game: str, now: datetime) -> PollOutcome:
     """
     Operate one sensor without letting it take the agent down.
