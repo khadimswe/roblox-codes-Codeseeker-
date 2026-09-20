@@ -67,7 +67,7 @@ This is the heart of the assignment. Build it before anything touches the networ
 
 - [x] `sources/web.py` — fetch and parse real listings, rate limited  
 - [x] Graceful failure: a dead source degrades the run, never crashes it  
-- [ ] Verify `--source web` populates real codes
+- [x] Verify `--source web` populates real codes — 4 real codes from 3 sources, see `docs/sample-run.txt`
 
 **Done when:** live mode works and failure of one source doesn't take the app down.
 
