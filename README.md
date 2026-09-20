@@ -38,8 +38,8 @@ ethical design choice and the mechanism that makes the agent work.
 ## Quickstart
 
 ```bash
-git clone <your-repo-url>
-cd codeseeker
+git clone https://github.com/khadimswe/roblox-codes-Codeseeker-
+cd roblox-codes-Codeseeker-
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -48,8 +48,13 @@ cp config/games.example.json config/games.json
 # ships configured for Slayers 2; add more games here if you want
 
 python main.py                   # launches the GUI, canned source by default
-python main.py --source web      # live fetching (see warning below)
 python main.py --demo            # canned feed with accelerated virtual clock
+python main.py --source web      # live fetching (see warning below)
+
+python main.py --demo --headless        # terminal run: transitions + ranked list
+python main.py --source web --record    # capture today's real listings as a fixture
+python main.py --snapshots recorded     # replay those real listings
+python -m pytest                        # 125 tests
 ```
 
 Python 3.10 or newer. The GUI uses Tkinter, which ships with most Python installs.
@@ -62,6 +67,30 @@ Python 3.10 or newer. The GUI uses Tkinter, which ships with most Python install
 |---|---|---|
 | Canned | default | Development, testing, and **the video demo** |
 | Live | `--source web` | Showing that real fetching works |
+
+Three live sources ship configured in `config/games.example.json`, all checked
+against `robots.txt` and fetched at most once every 2.5 seconds per host with an
+honest User-Agent:
+
+| Source | Trust | Why |
+|---|---|---|
+| [Project Slayers 2 Wiki](https://projectslayers2roblox.wiki/codes/) | 0.70 | Dated code table — says when each code was last confirmed |
+| [Dexerto](https://www.dexerto.com/roblox/slayers-2-codes-3410351/) | 0.65 | Clean code table |
+| [Pocket Tactics](https://www.pockettactics.com/slayers-2-codes) | 0.60 | Lower recall, which is what the trust difference is for |
+
+### Two fixture sets
+
+`data/snapshots/slayers2/` holds the **synthetic** demo narrative — every code
+prefixed `DEMO_`, arranged so some codes hold their confidence while others
+decay. That is what `--demo` replays and what the video should show.
+
+`data/snapshots/slayers2/recorded/` holds **genuinely recorded** listings
+written by `--source web --record`, each stamped with the date it was captured.
+Replay them with `--snapshots recorded`.
+
+They are kept apart so it is never ambiguous which codes in a screenshot are
+real. Run `--record` on a few different days and the recorded set replays as a
+timeline, so the demo runs on real data.
 
 The canned source replays recorded snapshots against a virtual clock, so you can
 fast-forward several days in seconds and actually watch confidence decay and codes die.
@@ -93,6 +122,7 @@ codeseeker/
 │   └── make_demo_snapshots.py   regenerates the synthetic demo fixtures
 ├── data/
 │   ├── snapshots/           canned feed fixtures (ground truth)
+│   │   └── slayers2/        DEMO_ narrative + recorded/ real captures
 │   ├── cache/               fetched pages during development (gitignored)
 │   └── belief.json          persisted belief state (gitignored)
 ├── config/games.json        which games to track and where to look

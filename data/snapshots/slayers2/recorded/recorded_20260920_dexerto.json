@@ -1,0 +1,31 @@
+{
+  "game": "slayers2",
+  "source_id": "dexerto",
+  "source_display_name": "Dexerto",
+  "offset_days": null,
+  "provenance": "RECORDED",
+  "captured_at": "2026-09-20T23:03:35.241216+00:00",
+  "capture_note": "RECORDED from https://www.dexerto.com/roblox/slayers-2-codes-3410351/ on 2026-09-20 by 'python main.py --source web --record'. These are real listings as published on that date; the agent makes no claim that they still work.",
+  "listings": [
+    {
+      "code": "Release26",
+      "claimed_reward": "100 Wen 30 Spins 1 Refinement Ore"
+    },
+    {
+      "code": "EVILARTSPINS",
+      "claimed_reward": ""
+    },
+    {
+      "code": "SORRYFORSHUTDOWN",
+      "claimed_reward": ""
+    },
+    {
+      "code": "POINTSRESET",
+      "claimed_reward": ""
+    },
+    {
+      "code": "Enter",
+      "claimed_reward": "to redeem the code and claim your rewards."
+    }
+  ]
+}

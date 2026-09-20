@@ -16,6 +16,7 @@ Usage
     python main.py --demo --headless    terminal run: transitions + ranked list
     python main.py --reset              discard the stored belief and start over
     python main.py --source web --record  save live listings as a dated snapshot
+    python main.py --snapshots recorded   replay those real recorded listings
 """
 
 from __future__ import annotations
@@ -64,7 +65,7 @@ def load_config() -> dict:
 
 
 def build_sources(
-    config: dict, game: str, mode: str, epoch: datetime
+    config: dict, game: str, mode: str, epoch: datetime, subset: str = ""
 ) -> list[Source]:
     """
     Construct the agent's sensors.
@@ -76,18 +77,27 @@ def build_sources(
     if mode == "canned":
         from sources.canned import build_canned_sources
 
-        sources = build_canned_sources(SNAPSHOT_DIR, game, epoch)
+        sources = build_canned_sources(SNAPSHOT_DIR, game, epoch, subset)
         if not sources:
-            print(
-                f"warning: no snapshots found in {SNAPSHOT_DIR / game}. "
-                f"Run: python tools/make_demo_snapshots.py",
-                file=sys.stderr,
+            where = SNAPSHOT_DIR / game / subset if subset else SNAPSHOT_DIR / game
+            hint = (
+                "Run: python main.py --source web --record"
+                if subset == "recorded"
+                else "Run: python tools/make_demo_snapshots.py"
             )
+            print(f"warning: no snapshots found in {where}. {hint}", file=sys.stderr)
         return sources
 
     from sources.web import build_web_sources
 
-    return build_web_sources(config, game, cache_dir=ROOT / "data" / "cache")
+    sources = build_web_sources(config, game, cache_dir=ROOT / "data" / "cache")
+    if not sources:
+        print(
+            f"warning: no source in config has a url for {game!r}. "
+            f"Add one to config/games.json under games.{game}.sources[].url",
+            file=sys.stderr,
+        )
+    return sources
 
 
 def build_store(config: dict, game: str, reset: bool) -> BeliefStore:
@@ -220,6 +230,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="start with source-trust refinement ON (GUI has a toggle)",
     )
     parser.add_argument(
+        "--snapshots",
+        choices=("demo", "recorded"),
+        default="demo",
+        help="which canned fixture set to replay: 'demo' is the synthetic DEMO_ "
+             "narrative (default, use this for the video), 'recorded' is real "
+             "listings captured by --record",
+    )
+    parser.add_argument(
         "--record",
         action="store_true",
         help="--source web only: save fetched listings to data/snapshots/ as a "
@@ -240,7 +258,8 @@ def main(argv: list[str] | None = None) -> int:
 
     clock: Clock = VirtualClock(DEMO_EPOCH) if args.demo else RealClock()
     epoch = DEMO_EPOCH if args.demo else None
-    sources = build_sources(config, game, args.source, epoch or DEMO_EPOCH)
+    subset = "recorded" if args.snapshots == "recorded" else ""
+    sources = build_sources(config, game, args.source, epoch or DEMO_EPOCH, subset)
 
     if args.record:
         if args.source != "web":

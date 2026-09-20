@@ -43,6 +43,31 @@
       "_note": "Fill roblox_url with the game's page if you want the GUI to link to it.",
       "sources": [
         {
+          "id": "projectslayers2_wiki",
+          "display_name": "Project Slayers 2 Wiki",
+          "url": "https://projectslayers2roblox.wiki/codes/",
+          "parser": "generic_list",
+          "initial_trust": 0.7,
+          "_note": "Fan wiki. Publishes a dated code table, so it parses cleanly and states when each code was last confirmed."
+        },
+        {
+          "id": "dexerto",
+          "display_name": "Dexerto",
+          "url": "https://www.dexerto.com/roblox/slayers-2-codes-3410351/",
+          "parser": "generic_list",
+          "initial_trust": 0.65,
+          "_note": "Editorial games site with a clean code table."
+        },
+        {
+          "id": "pockettactics",
+          "display_name": "Pocket Tactics",
+          "url": "https://www.pockettactics.com/slayers-2-codes",
+          "parser": "generic_list",
+          "initial_trust": 0.6,
+          "_note": "Editorial games site. Lower recall than the other two, which is exactly the kind of difference source trust is meant to capture."
+        },
+        {
+          "_comment": "The three entries below have no url on purpose. They are the source ids used by the synthetic fixtures in data/snapshots/, so that --demo has differentiated trust to work with. build_web_sources() skips any source without a url, so they cost nothing in live mode.",
           "id": "example_wiki",
           "display_name": "Example Fan Wiki",
           "url": "",

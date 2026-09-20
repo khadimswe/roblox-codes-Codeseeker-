@@ -1,7 +1,7 @@
 CodeSeeker — model-based agent, scripted demo run
 Canned source replaying data/snapshots/slayers2 against a virtual clock.
 All codes are DEMO_-prefixed synthetic fixtures (see CLAUDE.md).
-Source trust at start: {'example_wiki': 0.7, 'example_community': 0.5, 'example_video': 0.4}
+Source trust at start: {'projectslayers2_wiki': 0.7, 'dexerto': 0.65, 'pockettactics': 0.6, 'example_wiki': 0.7, 'example_community': 0.5, 'example_video': 0.4}
 
 ================================================================================
 ACT 1 — virtual day 0
@@ -167,7 +167,7 @@ This is the agent's ONLY true sensor reading. Watch two things:
 ================================================================================
 BELIEF AFTER THE RUN
 ================================================================================
-  source trust: {'example_wiki': 0.7, 'example_community': 0.4, 'example_video': 0.4}
+  source trust: {'projectslayers2_wiki': 0.7, 'dexerto': 0.65, 'pockettactics': 0.6, 'example_wiki': 0.7, 'example_community': 0.4, 'example_video': 0.4}
   (example_community was penalised for vouching for a dead code)
 
     DEMO_LAUNCH100K    0.69  ACTIVE     3 source(s)

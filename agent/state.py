@@ -504,10 +504,24 @@ CODE_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9_\-]{2,31}$")
 # invents one costs the agent its credibility and would violate the fixture rule
 # in CLAUDE.md, so the bias here is firmly toward rejecting.
 NON_CODE_WORDS = frozenset({
+    # listing-page vocabulary
     "CODE", "CODES", "COPY", "COPIED", "ACTIVE", "EXPIRED", "NEW", "UPDATE",
-    "UPDATED", "WORKING", "REWARD", "REWARDS", "SUBSCRIBE", "FOLLOW", "LIKE",
-    "SHARE", "ROBLOX", "GAME", "GAMES", "TWITTER", "DISCORD", "YOUTUBE", "HERE",
-    "CLICK", "READ", "MORE", "FREE", "REDEEM", "ENTER", "LIST", "ALL", "NONE",
+    "UPDATED", "WORKING", "REWARD", "REWARDS", "FREE", "REDEEM", "ENTER",
+    "LIST", "ALL", "NONE", "RELATED", "TAGS", "GUIDE", "GUIDES", "NOTE",
+    # navigation and social furniture
+    "SUBSCRIBE", "FOLLOW", "LIKE", "SHARE", "TWITTER", "DISCORD", "YOUTUBE",
+    "TIKTOK", "INSTAGRAM", "FACEBOOK", "BLUESKY", "NEWSLETTER", "HERE",
+    "CLICK", "READ", "MORE", "HOME", "MENU", "SEARCH", "LOGIN", "SIGNUP",
+    # the game and platform themselves
+    "ROBLOX", "GAME", "GAMES", "SLAYER", "SLAYERS", "PROJECT", "ANIME",
+    # instruction verbs that get bolded on how-to-redeem sections
+    "LAUNCH", "PRESS", "LOAD", "JOIN", "TYPE", "OPEN", "PLAY", "START",
+    # number words, which get bolded in sentences like "Four codes are working"
+    "ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT",
+    "NINE", "TEN", "ELEVEN", "TWELVE",
+    # month names, from "Last checked September 2026" headings
+    "JANUARY", "FEBRUARY", "MARCH", "APRIL", "JUNE", "JULY", "AUGUST",
+    "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",
 })
 
 

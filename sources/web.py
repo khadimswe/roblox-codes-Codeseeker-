@@ -49,10 +49,15 @@ from urllib.parse import urljoin, urlparse
 from sources.base import RawListing, Source, SourceError
 
 #: Honest and descriptive, with a contact route.  See the politeness note above.
+#:
+#: ASCII only, deliberately.  HTTP headers are latin-1 encoded, so a stray
+#: em-dash here raises UnicodeEncodeError on every request — a failure that
+#: looks like a network problem and is not one.
 USER_AGENT = (
     "CodeSeeker/1.0 (AI 3642 student coursework project; model-based agent demo; "
     "polls a handful of public code listings at most twice an hour; "
-    "+https://github.com/ — contact via repository issues)"
+    "+https://github.com/khadimswe/roblox-codes-Codeseeker- "
+    "- contact via repository issues)"
 )
 
 #: Minimum seconds between requests to the same host.  CLAUDE.md sets the floor
@@ -195,72 +200,126 @@ def fetch(url: str, cache_dir: Path | None = None, use_cache: bool = True) -> st
 # Parsing
 # --------------------------------------------------------------------------- #
 
-#: Markup that actually carries codes on listing pages: inline emphasis, code
-#: spans, list items, and table cells.  Deliberately a short list — CLAUDE.md
-#: says two or three sources parsed well beats ten parsed badly.
-_CODE_TAGS = ("code", "strong", "b", "kbd", "samp", "td", "li", "h3", "h4")
+#: Inline markup that wraps a bare code on a listing page.  Only consulted by
+#: the second strategy below, and only when the tag contains *nothing but* a
+#: code.
+_INLINE_TAGS = ("code", "strong", "b", "kbd", "samp", "mark", "em")
 
-#: A code-shaped token, used for the fallback scan.  Uppercase-ish, no spaces.
-_CODE_TOKEN = re.compile(r"\b[A-Z][A-Z0-9_]{3,31}\b")
+#: A code-shaped token: uppercase-ish, no spaces, long enough not to be a word
+#: fragment.  Codes are matched case-insensitively, so this is applied to the
+#: upper-cased text.
+_CODE_TOKEN = re.compile(r"[A-Z][A-Z0-9_]{3,31}")
+
+#: Header wording that marks the column holding codes, for the table strategy.
+_CODE_HEADER = re.compile(r"\bcodes?\b", re.IGNORECASE)
 
 
 def parse_generic_list(html: str, source_id: str) -> list[RawListing]:
     """
     Pull candidate codes out of a listing page.
 
-    This is intentionally a *candidate* extractor, not a clever one.  Everything
-    it returns still has to survive `agent/percepts.py`, which rejects anything
-    that does not look like a code.  Putting the strictness in one shared place
-    rather than in each parser means a sloppy parser can only ever cost recall —
-    it can never inject a fabricated code into the belief store.
+    Two strategies, in precision order:
 
-    The reward text next to a code is captured too, because
-    `percepts.infer_kind()` reads it to decide how fast the code should decay.
+    1. **Tables with a "Code" column.**  Nearly every codes page publishes a
+       table of code / reward / date, and a table cell is an unambiguous
+       container — the cell *is* the code, so there is no guessing where the
+       code ends and the prose begins.  This is where almost all real codes
+       come from.
+
+    2. **Inline tags containing nothing but a code**, e.g.
+       ``<strong>RELEASE26</strong> - 30 Spins``.  The requirement that the tag
+       hold *only* the code is the important part: matching the first token of
+       any tag instead would turn the sentence "Slayers 2 on Roblox. Click..."
+       into the code "SLAYERS", and a page's navigation into TIKTOK, INSTAGRAM
+       and FACEBOOK.  Precision beats recall here — a missed code costs the user
+       one code, an invented one costs the agent its credibility.
+
+    Whatever survives still has to get past `agent/percepts.py`, which rejects
+    anything that is not code-shaped and drops a stoplist of page furniture.
+    Keeping that strictness in one shared place means a sloppy parser can only
+    ever cost recall; it can never inject a fabricated code into the belief
+    store.
+
+    The reward text beside a code is captured too, because
+    `percepts.infer_kind()` reads it to decide how fast that code should decay.
     """
     try:
         from bs4 import BeautifulSoup
     except ImportError as exc:                        # pragma: no cover
         raise SourceError(
-            "the 'beautifulsoup4' package is required for --source web "
+            "the \'beautifulsoup4\' package is required for --source web "
             "(pip install -r requirements.txt)"
         ) from exc
 
     soup = BeautifulSoup(html, "html.parser")
-    for junk in soup(["script", "style", "nav", "footer", "header"]):
+    for junk in soup(["script", "style", "nav", "footer", "header", "aside", "form"]):
         junk.decompose()
 
     listings: list[RawListing] = []
     seen: set[str] = set()
 
-    for element in soup.find_all(_CODE_TAGS):
-        text = element.get_text(" ", strip=True)
-        if not text or len(text) > 64:
-            continue
-
-        token = text.split()[0] if text.split() else ""
-        if not _CODE_TOKEN.fullmatch(token.upper()):
-            continue
-        if token.upper() in seen:
-            continue
-        seen.add(token.upper())
-
+    def add(code: str, reward: str) -> None:
+        key = code.upper()
+        if key in seen:
+            return
+        seen.add(key)
         listings.append(
-            RawListing(
-                source_id=source_id,
-                code=token,
-                claimed_reward=_reward_near(element, token),
-            )
+            RawListing(source_id=source_id, code=code, claimed_reward=reward[:120])
         )
+
+    # ---- strategy 1: code tables ----------------------------------------- #
+    for table in soup.find_all("table"):
+        rows = table.find_all("tr")
+        if not rows:
+            continue
+
+        header_cells = [c.get_text(" ", strip=True) for c in rows[0].find_all(["th", "td"])]
+        code_column = next(
+            (i for i, text in enumerate(header_cells) if _CODE_HEADER.search(text)),
+            None,
+        )
+        if code_column is None:
+            # No "Code" header: only trust the table if its first column looks
+            # uniformly code-shaped, which rules out generic content tables.
+            code_column = 0
+            firsts = [
+                r.find_all(["td", "th"])[0].get_text(" ", strip=True)
+                for r in rows[1:6]
+                if r.find_all(["td", "th"])
+            ]
+            if not firsts or not all(_CODE_TOKEN.fullmatch(f.upper()) for f in firsts):
+                continue
+
+        for row in rows[1:]:
+            cells = row.find_all(["td", "th"])
+            if len(cells) <= code_column:
+                continue
+            code = cells[code_column].get_text(" ", strip=True)
+            if not _CODE_TOKEN.fullmatch(code.upper()):
+                continue
+            reward = " ".join(
+                c.get_text(" ", strip=True)
+                for i, c in enumerate(cells)
+                if i != code_column
+            )
+            add(code, reward)
+
+    # ---- strategy 2: inline tags holding nothing but a code --------------- #
+    for element in soup.find_all(_INLINE_TAGS):
+        text = element.get_text(" ", strip=True).strip(" :-\u2013\u2014.,\u2022|")
+        if not text or not _CODE_TOKEN.fullmatch(text.upper()):
+            continue
+        add(text, _reward_near(element, text))
 
     return listings
 
 
 def _reward_near(element, code: str) -> str:
     """
-    The prose sitting next to a code — usually "— 1,000 Spins" or a sibling cell.
+    The prose sitting next to a code - usually "- 1,000 Spins" or a sibling cell.
 
-    Only used as a hint for kind inference and for display, so a miss is
-    harmless; it just means the code decays at the baseline rate.
+    Only a hint for kind inference and for display, so a miss is harmless: the
+    code simply decays at the baseline rate.
     """
     parts: list[str] = []
     for sibling in list(element.next_siblings)[:2]:
@@ -268,9 +327,8 @@ def _reward_near(element, code: str) -> str:
         if text:
             parts.append(text)
     if not parts and element.parent is not None:
-        parent_text = element.parent.get_text(" ", strip=True)
-        parts.append(parent_text.replace(code, "", 1))
-    return re.sub(r"\s+", " ", " ".join(parts)).strip(" -–—:•|")[:120]
+        parts.append(element.parent.get_text(" ", strip=True).replace(code, "", 1))
+    return re.sub(r"\s+", " ", " ".join(parts)).strip(" -\u2013\u2014:\u2022|")[:120]
 
 
 PARSERS = {"generic_list": parse_generic_list}
@@ -336,17 +394,27 @@ class WebSource(Source):
 
 
 def build_web_sources(config: dict, game: str, cache_dir: Path | None = None) -> list[WebSource]:
-    """Construct one WebSource per configured source for this game."""
+    """
+    Construct one WebSource per configured source that has a url.
+
+    Entries without a url are skipped rather than built and left to fail.  The
+    config deliberately carries a few url-less entries — they are the source ids
+    the synthetic fixtures in `data/snapshots/` use, so that `--demo` has
+    differentiated trust to work with — and a source with no url is simply not a
+    live source.  Building them anyway would add a warning to every live poll
+    that told the user nothing.
+    """
     game_config = (config.get("games", {}) or {}).get(game, {}) or {}
     return [
         WebSource(
             source_id=entry["id"],
             display_name=entry.get("display_name", entry["id"]),
-            url=entry.get("url", ""),
+            url=entry["url"],
             parser=entry.get("parser", "generic_list"),
             cache_dir=cache_dir,
         )
         for entry in game_config.get("sources", [])
+        if entry.get("url")
     ]
 
 
@@ -371,7 +439,7 @@ def record_snapshot(
     """
     from sources.base import poll_safely
 
-    snapshot_dir = Path(snapshot_dir) / game
+    snapshot_dir = Path(snapshot_dir) / game / "recorded"
     snapshot_dir.mkdir(parents=True, exist_ok=True)
     stamp = now.strftime("%Y%m%d")
     written = 0

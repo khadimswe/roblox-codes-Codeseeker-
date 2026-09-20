@@ -27,20 +27,54 @@ class TestCannedReplay:
         assert snapshots, "run: python tools/make_demo_snapshots.py"
         assert timeline_offsets(SNAPSHOT_DIR, "slayers2") == [0.0, 3.0, 7.0, 12.0]
 
-    def test_every_fixture_code_is_recorded_or_obviously_synthetic(self):
+    @pytest.mark.parametrize("subset", ["", "recorded"])
+    def test_every_fixture_code_is_recorded_or_obviously_synthetic(self, subset):
         """
         CLAUDE.md hard constraint 3, as a test.  A fixture code must either be
         genuinely recorded with a capture date, or be prefixed DEMO_.  Inventing
         plausible Slayers 2 codes would produce strings a grader could not
         distinguish from fabricated results.
+
+        Both fixture sets are checked: the synthetic demo narrative, and the
+        real listings captured by `--source web --record`.
         """
-        for snapshot in load_snapshots(SNAPSHOT_DIR, "slayers2"):
-            recorded = snapshot.provenance == "RECORDED"
+        for snapshot in load_snapshots(SNAPSHOT_DIR, "slayers2", subset):
+            if snapshot.provenance == "RECORDED":
+                # A recorded fixture earns its real codes by saying exactly
+                # where and when they came from.
+                assert snapshot.capture_note
+                assert "RECORDED" in snapshot.capture_note
+                continue
             for listing in snapshot.listings:
-                assert recorded or listing.code.startswith("DEMO_"), (
+                assert listing.code.startswith("DEMO_"), (
                     f"{listing.code} is neither recorded nor DEMO_-prefixed"
                 )
             assert snapshot.capture_note, "fixtures must state their provenance"
+
+    def test_recorded_fixtures_carry_a_real_capture_date(self):
+        """
+        The capture date is what makes a real code in a fixture honest rather
+        than fabricated: it says 'this was published on this day', not 'this
+        works'.  It is also what `load_snapshots` derives replay offsets from
+        when several days have been captured.
+        """
+        recorded = load_snapshots(SNAPSHOT_DIR, "slayers2", "recorded")
+        if not recorded:
+            pytest.skip("no recorded snapshots; run: main.py --source web --record")
+        for snapshot in recorded:
+            assert snapshot.provenance == "RECORDED"
+            assert snapshot.offset_days is not None
+
+    def test_the_two_fixture_sets_are_kept_apart(self):
+        """
+        The demo narrative must not be diluted by real codes, so that it is
+        never ambiguous which codes in a screenshot are synthetic.
+        """
+        demo_codes = {
+            l.code for s in load_snapshots(SNAPSHOT_DIR, "slayers2") for l in s.listings
+        }
+        assert demo_codes, "run: python tools/make_demo_snapshots.py"
+        assert all(c.startswith("DEMO_") for c in demo_codes)
 
     def test_poll_returns_the_most_recent_wave_at_or_before_now(self):
         sources = {s.source_id: s for s in

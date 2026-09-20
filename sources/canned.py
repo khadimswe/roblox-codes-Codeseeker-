@@ -132,9 +132,21 @@ class CannedSource(Source):
 # Loading
 # --------------------------------------------------------------------------- #
 
-def load_snapshots(snapshot_dir: str | Path, game: str) -> list[Snapshot]:
+def load_snapshots(snapshot_dir: str | Path, game: str, subset: str = "") -> list[Snapshot]:
     """
     Read every snapshot file for a game.
+
+    `subset` selects a sub-directory of fixtures.  Two sets ship:
+
+      * the default (empty) set, `data/snapshots/<game>/`, holds the synthetic
+        DEMO_ narrative the video follows — arranged so that some codes hold
+        their confidence while others decay;
+      * `"recorded"`, `data/snapshots/<game>/recorded/`, holds genuinely
+        recorded listings written by `main.py --source web --record`.
+
+    They are kept apart so the demo narrative is not diluted by real codes
+    arriving on a single date, and so it is never ambiguous which codes in a
+    screenshot are synthetic.  The replay logic is identical for both.
 
     Two provenances are supported and treated identically at replay time:
 
@@ -147,6 +159,8 @@ def load_snapshots(snapshot_dir: str | Path, game: str) -> list[Snapshot]:
     the demo; crashing on it ends the run.
     """
     directory = Path(snapshot_dir) / game
+    if subset:
+        directory = directory / subset
     if not directory.is_dir():
         return []
 
@@ -202,10 +216,11 @@ def build_canned_sources(
     snapshot_dir: str | Path,
     game: str,
     epoch: datetime,
+    subset: str = "",
 ) -> list[CannedSource]:
     """Group every snapshot by source and return one replaying source for each."""
     by_source: dict[str, list[Snapshot]] = {}
-    for snapshot in load_snapshots(snapshot_dir, game):
+    for snapshot in load_snapshots(snapshot_dir, game, subset):
         by_source.setdefault(snapshot.source_id, []).append(snapshot)
 
     return [
@@ -214,12 +229,12 @@ def build_canned_sources(
     ]
 
 
-def timeline_offsets(snapshot_dir: str | Path, game: str) -> list[float]:
+def timeline_offsets(snapshot_dir: str | Path, game: str, subset: str = "") -> list[float]:
     """
     Every virtual day on which anything changes, for the GUI's clock control and
     for the headless runner's default schedule.
     """
-    return sorted({s.offset_days for s in load_snapshots(snapshot_dir, game)})
+    return sorted({s.offset_days for s in load_snapshots(snapshot_dir, game, subset)})
 
 
 def _parse_iso(value: str) -> datetime:
