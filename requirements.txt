@@ -1,0 +1,9 @@
+# Core runtime
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+
+# Tkinter ships with Python — no package needed.
+# If import tkinter fails on Linux: sudo apt install python3-tk
+
+# Development
+pytest>=8.0.0

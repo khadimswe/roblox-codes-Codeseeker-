@@ -1,0 +1,47 @@
+{
+  "_comment": "Copy to config/games.json and edit. 'sources' entries are parsed by sources/web.py; the canned source ignores urls and reads data/snapshots/ instead.",
+
+  "default_game": "slayers2",
+
+  "poll_interval_minutes": 30,
+
+  "confidence": {
+    "_comment": "Tunables for agent/model.py. See ABOUT.md for what these mean.",
+    "half_life_days": 7.0,
+    "corroboration_bonus_per_source": 0.15,
+    "max_corroboration_bonus": 0.45,
+    "suspect_threshold": 0.45,
+    "dead_threshold": 0.15,
+    "verified_working_confidence": 1.0,
+    "verified_dead_confidence": 0.0
+  },
+
+  "source_trust": {
+    "_comment": "Starting trust per source, 0.0 to 1.0. Updated at runtime when refinement is enabled.",
+    "default": 0.6
+  },
+
+  "games": {
+    "slayers2": {
+      "display_name": "Slayers 2",
+      "roblox_url": "",
+      "_note": "Fill roblox_url with the game's page if you want the GUI to link to it.",
+      "sources": [
+        {
+          "id": "example_wiki",
+          "display_name": "Example Fan Wiki",
+          "url": "",
+          "parser": "generic_list",
+          "initial_trust": 0.7
+        },
+        {
+          "id": "example_community",
+          "display_name": "Example Community Post",
+          "url": "",
+          "parser": "generic_list",
+          "initial_trust": 0.5
+        }
+      ]
+    }
+  }
+}

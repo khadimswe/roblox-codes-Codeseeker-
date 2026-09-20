@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Agent runtime state — belief is rebuilt, not versioned
+data/belief.json
+data/cache/
+
+# Local config (config/games.example.json IS versioned)
+config/games.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Report build artifacts
+*.pdf
+!docs/*.pdf
