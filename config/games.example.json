@@ -12,13 +12,28 @@
     "max_corroboration_bonus": 0.45,
     "suspect_threshold": 0.45,
     "dead_threshold": 0.15,
+    "_purge_comment": "Deliberately stricter than dead_threshold so a code stays visible in grey for a while before PURGE retires it. See model.should_purge().",
+    "purge_threshold": 0.05,
     "verified_working_confidence": 1.0,
-    "verified_dead_confidence": 0.0
+    "verified_dead_confidence": 0.0,
+
+    "_kind_comment": "ABOUT.md: 'codes tied to a limited-time event decay faster than milestone codes'. These multiply half_life_days per code kind, so the 'how the world evolves' component is not uniform across codes.",
+    "kind_half_life_multipliers": {
+      "event": 0.5,
+      "unknown": 1.0,
+      "milestone": 2.0
+    }
   },
 
   "source_trust": {
     "_comment": "Starting trust per source, 0.0 to 1.0. Updated at runtime when refinement is enabled.",
-    "default": 0.6
+    "default": 0.6,
+
+    "_refinement_comment": "How hard a user-reported outcome moves a listing source's trust. Only applied when the GUI refinement toggle is on (see ABOUT.md, 'the correction step').",
+    "trust_reward_on_working": 0.05,
+    "trust_penalty_on_dead": 0.10,
+    "trust_floor": 0.05,
+    "trust_ceiling": 0.95
   },
 
   "games": {
@@ -40,6 +55,13 @@
           "url": "",
           "parser": "generic_list",
           "initial_trust": 0.5
+        },
+        {
+          "id": "example_video",
+          "display_name": "Example Video Description",
+          "url": "",
+          "parser": "generic_list",
+          "initial_trust": 0.4
         }
       ]
     }
