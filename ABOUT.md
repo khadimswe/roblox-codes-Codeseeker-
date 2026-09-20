@@ -62,6 +62,105 @@ Because that edges toward learning-agent territory and the assignment asks for a
 
 ---
 
+## The confidence model, precisely
+
+The code in `agent/model.py` implements the following. Every constant is in
+`config/games.json`, and the default values are given in brackets.
+
+### Decay — "how the world evolves"
+
+Confidence in a code falls by exponential half-life from the last time **any**
+source listed it:
+
+    decay_factor = 0.5 ^ (age_days / effective_half_life)
+
+`age_days` is measured from `last_corroborated`, not from `first_seen`. A code a
+wiki is still re-listing today is being implicitly re-endorsed today; the code
+that should be decaying is the one that has quietly dropped off every page it
+used to appear on.
+
+The half-life is not uniform, because the world is not uniform:
+
+| Kind | Multiplier | Effective half-life |
+| :---- | :---- | :---- |
+| `event` | 0.5 | 3.5 days |
+| `unknown` | 1.0 | 7 days |
+| `milestone` | 2.0 | 14 days |
+
+Kind is inferred from the reward blurb by `agent/percepts.py`, which checks for
+milestone wording before event wording — "100K likes, limited time" is a
+milestone code with marketing attached, and reading it as an event code would
+make the agent give up on it far too early. It returns `unknown` freely; a wrong
+guess distorts a real decay rate, so guessing only on clear evidence is the
+conservative choice.
+
+Decay is monotonically decreasing and never reaches zero. That asymmetry is
+deliberate: the agent grows steadily less sure, but it never becomes *certain* a
+code is dead without observing it. Only the user's redemption report produces
+certainty.
+
+### Evidence — "what my actions do"
+
+What third-party listings are worth at the moment they were made:
+
+    listing_evidence = mean(trust of listing sources)
+                     + min(0.45, 0.15 x (number_of_sources - 1))
+
+The mean rather than the maximum, so a code on one reliable site and two
+unreliable ones is not scored as though the unreliable ones were absent — that
+term is about the *quality* of testimony. Breadth is the second term, and it is
+capped [0.45]: ten scraper sites that copy one another are not ten independent
+observations, and without the cap they would outrank a code the user personally
+redeemed yesterday.
+
+### The two strands
+
+The agent weighs two kinds of evidence and believes whichever has survived better:
+
+    A. third-party listings   worth `listing_evidence` at `last_corroborated`
+    B. the user's own report   worth 1.0 at `last_verified.at`
+
+    confidence = max(A x decay_factor(A), B x decay_factor(B))
+
+Both decay at the same rate, because decay models *the world changing*, not the
+evidence getting worse. A code the user redeemed a week ago and a code a wiki
+listed a week ago have had the same week in which to be revoked; they differ in
+how sure the agent was to begin with, not in how fast that erodes.
+
+A reported **failure** is different, and absorbing: confidence goes to 0.0 and
+stays there. A code the user watched be rejected does not come back, so no
+amount of subsequent listing raises it. Without that rule a stubborn wiki could
+talk the agent out of what the user personally saw.
+
+### Bands
+
+| Confidence | Status | Shown as |
+| :---- | :---- | :---- |
+| >= 0.45 | `ACTIVE` | green — try this |
+| >= 0.15 | `SUSPECT` | amber — try it last |
+| < 0.15 | `DEAD` | grey — don't bother |
+| < 0.05 | retired by `PURGE` | dropped from the list, kept in the record |
+
+The purge threshold [0.05] is deliberately stricter than the dead threshold
+[0.15]. If purging fired at `dead_threshold`, a code would turn grey and vanish
+on the same tick and the grey state would never be visible — and watching a code
+go green, amber, grey is the demonstration this project is built around. A code
+the user personally watched fail is retired at once instead, since there is
+nothing further to learn from showing it.
+
+### Source-trust refinement
+
+Behind the GUI toggle, a user report moves every listing source's trust:
+
+    working -> trust + 0.05        dead -> trust - 0.10
+
+clamped to [0.05, 0.95]. The penalty is larger than the reward on purpose: a
+dead code is strong evidence that a source is stale, while a working code is
+weak evidence that it is good, since even a poor source lists mostly-working
+codes in the days right after an update.
+
+---
+
 ## Representation
 
 Each code is stored as a **factored representation** in Russell & Norvig's terms: not an opaque atomic state, but a vector of attributes.
@@ -81,6 +180,8 @@ CodeRecord {
 &nbsp;&nbsp;&nbsp;&nbsp;last\_verified   most recent user-reported outcome, if any
 
 &nbsp;&nbsp;&nbsp;&nbsp;claimed\_reward  what the sources say it gives
+
+&nbsp;&nbsp;&nbsp;&nbsp;kind            event | milestone | unknown — sets the decay rate
 
 &nbsp;&nbsp;&nbsp;&nbsp;status          ACTIVE | SUSPECT | DEAD | UNVERIFIED
 

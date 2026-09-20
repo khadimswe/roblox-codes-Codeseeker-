@@ -1,0 +1,179 @@
+CodeSeeker — model-based agent, scripted demo run
+Canned source replaying data/snapshots/slayers2 against a virtual clock.
+All codes are DEMO_-prefixed synthetic fixtures (see CLAUDE.md).
+Source trust at start: {'example_wiki': 0.7, 'example_community': 0.5, 'example_video': 0.4}
+
+================================================================================
+ACT 1 — virtual day 0
+the agent's first look at the world
+================================================================================
+  [day  0.00] IDLE -> POLL_SOURCES: poll due for slayers2; 3 source(s) configured
+  [day  0.00] POLL_SOURCES -> EXTRACT: 10 listing(s) returned from 3/3 source(s)
+  [day  0.00] EXTRACT -> RECONCILE: 10 percepts from 3 sources
+  [day  0.00] RECONCILE -> DECAY: 6 new code(s), 4 corroboration(s) refreshed; new: DEMO_LAUNCH100K, DEMO_WEEKENDX2, DEMO_RUMOUR, DEMO_HEARSAY, DEMO_SHOWCASE, DEMO_STALEONE
+  [day  0.00] DECAY -> RANK: aged 6 belief(s)
+  [day  0.00] RANK -> PRESENT: 6 code(s): 6 ACTIVE; best DEMO_LAUNCH100K at 0.83
+  [day  0.00] PRESENT -> IDLE: nothing below the purge threshold; waiting
+
+  CODE                CONF  STATUS    SRC     AGE  REWARD
+  ----------------------------------------------------------------------------
+  DEMO_LAUNCH100K     0.83  ACTIVE      3    0.0d  1,000 Spins — 100K likes milesto  ########
+  DEMO_WEEKENDX2      0.75  ACTIVE      2    0.0d  2x XP — weekend event, limited t  ########
+  DEMO_SHOWCASE       0.70  ACTIVE      2    0.0d  500 Gems  #######
+  DEMO_STALEONE       0.70  ACTIVE      1    0.0d  250 Gems  #######
+  DEMO_HEARSAY        0.50  ACTIVE      1    0.0d  Rare Sword skin (unconfirmed)  #####
+  DEMO_RUMOUR         0.50  ACTIVE      1    0.0d  5,000 Gems (unconfirmed)  #####
+
+================================================================================
+ACT 2 — virtual day 3
+no announcements, no expiry notices — only what pages still list
+================================================================================
+  [day  3.00] IDLE -> POLL_SOURCES: poll due for slayers2; 3 source(s) configured
+  [day  3.00] POLL_SOURCES -> EXTRACT: 7 listing(s) returned from 3/3 source(s)
+  [day  3.00] EXTRACT -> RECONCILE: 7 percepts from 3 sources
+  [day  3.00] RECONCILE -> DECAY: 0 new code(s), 7 corroboration(s) refreshed
+  [day  3.00] DECAY -> RANK: aged 6 belief(s); largest fall DEMO_WEEKENDX2 0.75->0.41
+  [day  3.00] RANK -> PRESENT: 6 code(s): 5 ACTIVE, 1 SUSPECT; best DEMO_LAUNCH100K at 0.83
+  [day  3.00] PRESENT -> IDLE: nothing below the purge threshold; waiting
+
+  CODE                CONF  STATUS    SRC     AGE  REWARD
+  ----------------------------------------------------------------------------
+  DEMO_LAUNCH100K     0.83  ACTIVE      3    0.0d  1,000 Spins — 100K likes milesto  ########
+  DEMO_SHOWCASE       0.70  ACTIVE      2    0.0d  500 Gems  #######
+  DEMO_STALEONE       0.52  ACTIVE      1    3.0d  250 Gems  #####
+  DEMO_HEARSAY        0.50  ACTIVE      1    0.0d  Rare Sword skin (unconfirmed)  #####
+  DEMO_RUMOUR         0.50  ACTIVE      1    0.0d  5,000 Gems (unconfirmed)  #####
+  DEMO_WEEKENDX2      0.41  SUSPECT     2    3.0d  2x XP — weekend event, limited t  ####
+
+================================================================================
+ACT 2 — virtual day 6
+no announcements, no expiry notices — only what pages still list
+================================================================================
+  [day  6.00] IDLE -> POLL_SOURCES: poll due for slayers2; 3 source(s) configured
+  [day  6.00] POLL_SOURCES -> EXTRACT: 7 listing(s) returned from 3/3 source(s)
+  [day  6.00] EXTRACT -> RECONCILE: 7 percepts from 3 sources
+  [day  6.00] RECONCILE -> DECAY: 0 new code(s), 7 corroboration(s) refreshed
+  [day  6.00] DECAY -> RANK: aged 6 belief(s); largest fall DEMO_WEEKENDX2 0.41->0.23
+  [day  6.00] RANK -> PRESENT: 6 code(s): 4 ACTIVE, 2 SUSPECT; best DEMO_LAUNCH100K at 0.83
+  [day  6.00] PRESENT -> IDLE: nothing below the purge threshold; waiting
+
+  CODE                CONF  STATUS    SRC     AGE  REWARD
+  ----------------------------------------------------------------------------
+  DEMO_LAUNCH100K     0.83  ACTIVE      3    0.0d  1,000 Spins — 100K likes milesto  ########
+  DEMO_SHOWCASE       0.70  ACTIVE      2    0.0d  500 Gems  #######
+  DEMO_HEARSAY        0.50  ACTIVE      1    0.0d  Rare Sword skin (unconfirmed)  #####
+  DEMO_RUMOUR         0.50  ACTIVE      1    0.0d  5,000 Gems (unconfirmed)  #####
+  DEMO_STALEONE       0.39  SUSPECT     1    6.0d  250 Gems  ####
+  DEMO_WEEKENDX2      0.23  SUSPECT     2    6.0d  2x XP — weekend event, limited t  ##
+
+================================================================================
+ACT 2 — virtual day 9
+no announcements, no expiry notices — only what pages still list
+================================================================================
+  [day  9.00] IDLE -> POLL_SOURCES: poll due for slayers2; 3 source(s) configured
+  [day  9.00] POLL_SOURCES -> EXTRACT: 7 listing(s) returned from 3/3 source(s)
+  [day  9.00] EXTRACT -> RECONCILE: 7 percepts from 3 sources
+  [day  9.00] RECONCILE -> DECAY: 1 new code(s), 6 corroboration(s) refreshed; new: DEMO_UPDATE5
+  [day  9.00] DECAY -> RANK: aged 7 belief(s); largest fall DEMO_SHOWCASE 0.70->0.52
+  [day  9.00] RANK -> PRESENT: 7 code(s): 5 ACTIVE, 1 DEAD, 1 SUSPECT; best DEMO_LAUNCH100K at 0.83
+  [day  9.00] PRESENT -> IDLE: nothing below the purge threshold; waiting
+
+  CODE                CONF  STATUS    SRC     AGE  REWARD
+  ----------------------------------------------------------------------------
+  DEMO_LAUNCH100K     0.83  ACTIVE      3    0.0d  1,000 Spins — 100K likes milesto  ########
+  DEMO_UPDATE5        0.75  ACTIVE      2    0.0d  750 Spins — Update 5 launch, exp  ########
+  DEMO_SHOWCASE       0.52  ACTIVE      2    3.0d  500 Gems  #####
+  DEMO_HEARSAY        0.50  ACTIVE      1    0.0d  Rare Sword skin (unconfirmed)  #####
+  DEMO_RUMOUR         0.50  ACTIVE      1    0.0d  5,000 Gems (unconfirmed)  #####
+  DEMO_STALEONE       0.29  SUSPECT     1    9.0d  250 Gems  ###
+  DEMO_WEEKENDX2      0.13  DEAD        2    9.0d  2x XP — weekend event, limited t  #
+
+================================================================================
+ACT 2 — virtual day 12
+no announcements, no expiry notices — only what pages still list
+================================================================================
+  [day 12.00] IDLE -> POLL_SOURCES: poll due for slayers2; 3 source(s) configured
+  [day 12.00] POLL_SOURCES -> EXTRACT: 6 listing(s) returned from 3/3 source(s)
+  [day 12.00] EXTRACT -> RECONCILE: 6 percepts from 3 sources
+  [day 12.00] RECONCILE -> DECAY: 0 new code(s), 6 corroboration(s) refreshed
+  [day 12.00] DECAY -> RANK: aged 7 belief(s); largest fall DEMO_SHOWCASE 0.52->0.39
+  [day 12.00] RANK -> PRESENT: 7 code(s): 3 ACTIVE, 1 DEAD, 3 SUSPECT; best DEMO_LAUNCH100K at 0.83
+  [day 12.00] PRESENT -> IDLE: nothing below the purge threshold; waiting
+
+  CODE                CONF  STATUS    SRC     AGE  REWARD
+  ----------------------------------------------------------------------------
+  DEMO_LAUNCH100K     0.83  ACTIVE      3    0.0d  1,000 Spins — 100K likes milesto  ########
+  DEMO_UPDATE5        0.83  ACTIVE      3    0.0d  750 Spins — Update 5 launch, exp  ########
+  DEMO_HEARSAY        0.50  ACTIVE      1    0.0d  Rare Sword skin (unconfirmed)  #####
+  DEMO_SHOWCASE       0.39  SUSPECT     2    6.0d  500 Gems  ####
+  DEMO_RUMOUR         0.37  SUSPECT     1    3.0d  5,000 Gems (unconfirmed)  ####
+  DEMO_STALEONE       0.21  SUSPECT     1   12.0d  250 Gems  ##
+  DEMO_WEEKENDX2      0.07  DEAD        2   12.0d  2x XP — weekend event, limited t  #
+
+================================================================================
+ACT 3 — virtual day 15, every source fails
+POLL_SOURCES -> DECAY. The agent has no new information at all and its beliefs still change,
+because it is reasoning about a world it cannot currently observe. A reflex agent has
+nothing to do here.
+================================================================================
+  [day 15.00] IDLE -> POLL_SOURCES: poll due for slayers2; 3 source(s) configured
+  [day 15.00] POLL_SOURCES -> DECAY: all 3 source(s) failed — ageing beliefs anyway with no new evidence
+  [day 15.00] DECAY -> RANK: aged 7 belief(s); largest fall DEMO_UPDATE5 0.83->0.46
+  [day 15.00] RANK -> PRESENT: 7 code(s): 2 ACTIVE, 1 DEAD, 4 SUSPECT; best DEMO_LAUNCH100K at 0.72
+  [day 15.00] PRESENT -> PURGE: 1 code(s) below the purge threshold (0.05)
+  [day 15.00] PURGE -> IDLE: retired DEMO_WEEKENDX2 — kept in the record, dropped from the list
+  ! source example_community unavailable: HTTP 503 Service Unavailable
+  ! source example_video unavailable: HTTP 503 Service Unavailable
+  ! source example_wiki unavailable: HTTP 503 Service Unavailable
+
+  CODE                CONF  STATUS    SRC     AGE  REWARD
+  ----------------------------------------------------------------------------
+  DEMO_LAUNCH100K     0.72  ACTIVE      3    3.0d  1,000 Spins — 100K likes milesto  #######
+  DEMO_UPDATE5        0.46  ACTIVE      3    3.0d  750 Spins — Update 5 launch, exp  #####
+  DEMO_HEARSAY        0.37  SUSPECT     1    3.0d  Rare Sword skin (unconfirmed)  ####
+  DEMO_SHOWCASE       0.29  SUSPECT     2    9.0d  500 Gems  ###
+  DEMO_RUMOUR         0.28  SUSPECT     1    6.0d  5,000 Gems (unconfirmed)  ###
+  DEMO_STALEONE       0.16  SUSPECT     1   15.0d  250 Gems  ##
+  DEMO_WEEKENDX2      0.04  DEAD        2   15.0d  2x XP — weekend event, limited t  
+
+================================================================================
+ACT 4 — the correction step, with refinement ON
+The user pasted DEMO_RUMOUR into Roblox by hand and it was rejected.
+This is the agent's ONLY true sensor reading. Watch two things:
+  1. the belief about DEMO_RUMOUR snaps to truth
+  2. DEMO_HEARSAY — a different code, from the same source — falls too
+================================================================================
+  [day 15.00] IDLE -> VERIFY: user reports DEMO_RUMOUR DEAD (agent predicted 0.28)
+  [day 15.00] VERIFY -> RANK: belief snapped to 0.00; source trust revised (example_community 0.50->0.40)
+  [day 15.00] RANK -> PRESENT: 6 code(s): 1 ACTIVE, 1 DEAD, 4 SUSPECT; best DEMO_LAUNCH100K at 0.69
+  [day 15.00] PRESENT -> PURGE: 1 code(s) now unworth showing
+  [day 15.00] PURGE -> IDLE: retired DEMO_RUMOUR
+
+  CODE                CONF  STATUS    SRC     AGE  REWARD
+  ----------------------------------------------------------------------------
+  DEMO_LAUNCH100K     0.69  ACTIVE      3    3.0d  1,000 Spins — 100K likes milesto  #######
+  DEMO_UPDATE5        0.44  SUSPECT     3    3.0d  750 Spins — Update 5 launch, exp  ####
+  DEMO_HEARSAY        0.30  SUSPECT     1    3.0d  Rare Sword skin (unconfirmed)  ###
+  DEMO_SHOWCASE       0.29  SUSPECT     2    9.0d  500 Gems  ###
+  DEMO_STALEONE       0.16  SUSPECT     1   15.0d  250 Gems  ##
+  DEMO_RUMOUR         0.00  DEAD        1    6.0d  5,000 Gems (unconfirmed)  
+
+  effect on codes the user said nothing about:
+    DEMO_LAUNCH100K    0.72 -> 0.69
+    DEMO_UPDATE5       0.46 -> 0.44
+    DEMO_HEARSAY       0.37 -> 0.30
+    DEMO_RUMOUR        0.28 -> 0.00
+
+================================================================================
+BELIEF AFTER THE RUN
+================================================================================
+  source trust: {'example_wiki': 0.7, 'example_community': 0.4, 'example_video': 0.4}
+  (example_community was penalised for vouching for a dead code)
+
+    DEMO_LAUNCH100K    0.69  ACTIVE     3 source(s)
+    DEMO_UPDATE5       0.44  SUSPECT    3 source(s)
+    DEMO_HEARSAY       0.30  SUSPECT    1 source(s)
+    DEMO_SHOWCASE      0.29  SUSPECT    2 source(s)
+    DEMO_STALEONE      0.16  SUSPECT    1 source(s)
+    DEMO_WEEKENDX2     0.04  retired    2 source(s)
+    DEMO_RUMOUR        0.00  retired    1 source(s)

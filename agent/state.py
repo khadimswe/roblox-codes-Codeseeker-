@@ -446,6 +446,10 @@ class BeliefStore:
             return cls(default_trust=default_trust)
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
+            # Valid JSON is not necessarily a belief file: `null`, a list, or a
+            # bare number all parse cleanly and then fail on attribute access.
+            if not isinstance(raw, dict):
+                return cls(default_trust=default_trust)
             if raw.get("schema_version") != BELIEF_SCHEMA_VERSION:
                 return cls(default_trust=default_trust)
             store = cls(

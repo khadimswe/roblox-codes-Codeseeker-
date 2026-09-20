@@ -74,24 +74,35 @@ depends on a website not changing its layout that morning.
 
 ```
 codeseeker/
-├── main.py                  entry point, argument parsing
+├── main.py                  entry point, argument parsing, wiring
 ├── agent/
 │   ├── state.py             CodeRecord, BeliefStore — the internal model
-│   ├── model.py             decay, corroboration, confidence math
+│   ├── model.py             decay, corroboration, confidence math (pure)
 │   ├── percepts.py          normalizes raw source output into percepts
-│   └── fsm.py               the finite state machine driver
+│   ├── fsm.py               the finite state machine driver + transition log
+│   └── clock.py             real and virtual clocks
 ├── sources/
-│   ├── base.py              Source interface
-│   ├── canned.py            replays recorded snapshots
-│   └── web.py               live fetcher, rate limited
+│   ├── base.py              Source interface, RawListing, poll_safely
+│   ├── canned.py            replays recorded snapshots against a virtual clock
+│   └── web.py               live fetcher, rate limited, robots-aware
 ├── ui/
-│   └── app.py               Tkinter GUI
+│   ├── app.py               Tkinter GUI
+│   └── theme.py             palette and fonts
+├── tests/                   pytest — model, FSM, sources, state, architecture
+├── tools/
+│   └── make_demo_snapshots.py   regenerates the synthetic demo fixtures
 ├── data/
-│   ├── snapshots/           canned feed fixtures
+│   ├── snapshots/           canned feed fixtures (ground truth)
+│   ├── cache/               fetched pages during development (gitignored)
 │   └── belief.json          persisted belief state (gitignored)
 ├── config/games.json        which games to track and where to look
-└── docs/                    FSM diagram, screenshots for the report
+└── docs/                    FSM spec + diagram, screenshots for the report
 ```
+
+Run the tests with `python -m pytest`. Beyond the belief math, `tests/test_architecture.py`
+asserts the structural claims the report rests on: ground truth and belief share no
+objects, `agent/` never imports `ui/`, `model.py` reads no clock, and nothing anywhere
+imports an input-automation library.
 
 ---
 

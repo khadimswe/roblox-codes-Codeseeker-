@@ -8,10 +8,10 @@ Deliverable deadlines and what goes to D2L are at the bottom.
 
 ## M0 — Repo skeleton
 
-- [ ] `requirements.txt`, `.gitignore`, virtualenv  
-- [ ] Directory tree per `README.md`  
-- [ ] `config/games.json` from the example, set to Slayers 2  
-- [ ] `main.py` parses `--source`, `--demo`, `--reset` and exits cleanly
+- [x] `requirements.txt`, `.gitignore`, virtualenv  
+- [x] Directory tree per `README.md`  
+- [x] `config/games.json` from the example, set to Slayers 2  
+- [x] `main.py` parses `--source`, `--demo`, `--reset` and exits cleanly
 
 **Done when:** `python main.py --help` prints usage.
 
@@ -21,13 +21,13 @@ Deliverable deadlines and what goes to D2L are at the bottom.
 
 This is the heart of the assignment. Build it before anything touches the network.
 
-- [ ] `agent/state.py`: `CodeRecord` dataclass and `BeliefStore` (add, update, query, JSON persistence to `data/belief.json`)  
-- [ ] `agent/model.py`:  
-      - [ ] `decay(record, now)` — confidence falls with age since last corroboration  
-      - [ ] `corroborate(record, sources)` — multi-source agreement raises confidence  
-      - [ ] `score(record, now)` — combined confidence, 0.0 to 1.0  
-      - [ ] `apply_verification(record, outcome)` — snap belief to observed truth  
-- [ ] Unit tests for the math. A code unseen for two weeks should decay well below a fresh one; a code in three sources should outrank the same-age code in one.
+- [x] `agent/state.py`: `CodeRecord` dataclass and `BeliefStore` (add, update, query, JSON persistence to `data/belief.json`)  
+- [x] `agent/model.py`:  
+      - [x] `decay(record, now)` — confidence falls with age since last corroboration  
+      - [x] `corroborate(record, sources)` — multi-source agreement raises confidence  
+      - [x] `score(record, now)` — combined confidence, 0.0 to 1.0  
+      - [x] `apply_verification(record, outcome)` — snap belief to observed truth  
+- [x] Unit tests for the math. A code unseen for two weeks should decay well below a fresh one; a code in three sources should outrank the same-age code in one.
 
 **Done when:** tests pass and you can hand-build a `BeliefStore`, advance a fake clock, and watch scores fall.
 
@@ -37,11 +37,11 @@ This is the heart of the assignment. Build it before anything touches the networ
 
 ## M2 — Canned source and the FSM
 
-- [ ] `sources/base.py` — the `Source` interface (`poll(game, now) -> list[RawListing]`)  
-- [ ] `sources/canned.py` — replays `data/snapshots/` against a virtual clock  
-- [ ] `data/snapshots/` fixtures for Slayers 2 (see `CLAUDE.md` on fixture codes)  
-- [ ] `agent/percepts.py` — normalize raw listings into percepts  
-- [ ] `agent/fsm.py` — the state machine in `docs/FSM.md`, with a transition log
+- [x] `sources/base.py` — the `Source` interface (`poll(game, now) -> list[RawListing]`)  
+- [x] `sources/canned.py` — replays `data/snapshots/` against a virtual clock  
+- [x] `data/snapshots/` fixtures for Slayers 2 (see `CLAUDE.md` on fixture codes)  
+- [x] `agent/percepts.py` — normalize raw listings into percepts  
+- [x] `agent/fsm.py` — the state machine in `docs/FSM.md`, with a transition log
 
 **Done when:** a headless tick loop runs the full cycle and prints state transitions and the ranked list to the terminal. No GUI yet.
 
@@ -49,15 +49,15 @@ This is the heart of the assignment. Build it before anything touches the networ
 
 ## M3 — GUI
 
-- [ ] `ui/app.py` — Tkinter  
-- [ ] Game dropdown (Slayers 2 selected)  
-- [ ] Ranked code list: code, confidence bar, source badges, age, claimed reward  
-- [ ] Colour by status — green ACTIVE, amber SUSPECT, grey DEAD  
-- [ ] **Copy button** per code  
-- [ ] **Worked / Didn't work** buttons per code — this is the sensor  
-- [ ] Transition log pane, live  
-- [ ] Toggle: source-trust refinement on/off (the demo beat from `ABOUT.md`)  
-- [ ] Virtual clock control in demo mode — step forward a day
+- [x] `ui/app.py` — Tkinter  
+- [x] Game dropdown (Slayers 2 selected)  
+- [x] Ranked code list: code, confidence bar, source badges, age, claimed reward  
+- [x] Colour by status — green ACTIVE, amber SUSPECT, grey DEAD  
+- [x] **Copy button** per code  
+- [x] **Worked / Didn't work** buttons per code — this is the sensor  
+- [x] Transition log pane, live  
+- [x] Toggle: source-trust refinement on/off (the demo beat from `ABOUT.md`)  
+- [x] Virtual clock control in demo mode — step forward a day
 
 **Done when:** you can run it, fast-forward, watch a code decay from green to amber to grey, mark one dead, and see other codes from that source lose confidence.
 
@@ -65,8 +65,8 @@ This is the heart of the assignment. Build it before anything touches the networ
 
 ## M4 — Live source
 
-- [ ] `sources/web.py` — fetch and parse real listings, rate limited  
-- [ ] Graceful failure: a dead source degrades the run, never crashes it  
+- [x] `sources/web.py` — fetch and parse real listings, rate limited  
+- [x] Graceful failure: a dead source degrades the run, never crashes it  
 - [ ] Verify `--source web` populates real codes
 
 **Done when:** live mode works and failure of one source doesn't take the app down.
@@ -78,7 +78,7 @@ This is the heart of the assignment. Build it before anything touches the networ
 - [ ] FSM diagram image for Section 2 — export from `docs/FSM.md`  
 - [ ] Screenshots: code with comments visible, GUI at rest, mid-decay, post-correction  
 - [ ] Terminal output showing state transitions  
-- [ ] Confirm every source file is commented to the standard in `CLAUDE.md`
+- [x] Confirm every source file is commented to the standard in `CLAUDE.md` — asserted by `tests/test_architecture.py::TestDocumentationStandard`
 
 ---
 

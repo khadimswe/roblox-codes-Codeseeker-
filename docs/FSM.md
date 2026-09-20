@@ -16,7 +16,7 @@ This is the agent's control loop. Section 2 of the report needs a diagram of it 
 | `RANK` | Score and sort; assign status ACTIVE / SUSPECT / DEAD. | Belief → decision |
 | `PRESENT` | Update the GUI with the ranked list. | Actuator |
 | `VERIFY` | Handle a user-reported redemption outcome. Snap that code's belief to truth; update source trust if refinement is enabled. | **The correction step** |
-| `PURGE` | Retire codes below the dead threshold. Kept in the record, dropped from the active list. | Belief maintenance |
+| `PURGE` | Retire codes below the **purge** threshold [0.05], which is deliberately stricter than the DEAD label [0.15] so a code stays visible in grey for a while first. Kept in the record, dropped from the active list. | Belief maintenance |
 
 ---
 
@@ -44,7 +44,7 @@ DECAY ────────────────────────�
 
 RANK ────────────────────────────────► PRESENT
 
-PRESENT ──(any code below threshold)─► PURGE
+PRESENT ──(any code below purge threshold)─► PURGE
 
 PRESENT ──(otherwise)────────────────► IDLE
 
